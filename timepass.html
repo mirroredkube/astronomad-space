@@ -41,6 +41,8 @@
     }
     .game-card { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
     .game-card:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(34, 211, 238, .25); border-color: rgba(125, 211, 252, .35); }
+    .thumb { aspect-ratio: 16/9; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,.12); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   </style>
 </head>
 <body class="antialiased selection:bg-cyan-300/20 selection:text-cyan-100">
@@ -76,8 +78,12 @@
 
     <!-- Selected Game Panel -->
     <section id="player" class="mt-6 hidden">
-      <div class="flex items-center justify-between mb-3">
-        <h2 id="gameTitle" class="text-xl sm:text-2xl font-semibold text-cyan-200">Neon Tunnel</h2>
+      <div class="flex items-center justify-between mb-3 gap-3">
+        <div class="flex items-center gap-3">
+          <button id="backBtn" class="px-3 py-1.5 rounded-lg glass border border-white/10 text-sm hover:border-cyan-300/40 hover:shadow"
+                  type="button">← Back to Library</button>
+          <h2 id="gameTitle" class="text-xl sm:text-2xl font-semibold text-cyan-200">Neon Tunnel</h2>
+        </div>
         <a id="openNewTab" href="#" target="_blank" rel="noopener" class="text-sm text-slate-300 hover:text-white underline">Open in new tab ↗</a>
       </div>
       <div class="rounded-3xl overflow-hidden border border-white/10">
@@ -105,30 +111,45 @@
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    // 1) Declare your games here. Add a new object per game.
+    // --- Config: Add new games here ---
+    const PLACEHOLDER_THUMB = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#0b1020"/>
+            <stop offset="1" stop-color="#0a0f1e"/>
+          </linearGradient>
+        </defs>
+        <rect width="1200" height="675" fill="url(#g)"/>
+        <g fill="none" stroke="#22d3ee" stroke-opacity=".35">
+          <circle cx="600" cy="337" r="240"/>
+          <circle cx="600" cy="337" r="180"/>
+          <circle cx="600" cy="337" r="120"/>
+        </g>
+        <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
+              font-family="Inter,system-ui" font-size="64" fill="#7dd3fc">Game</text>
+      </svg>
+    `);
+
     const GAMES = [
       {
         id: "neon_tunnel",
         title: "Neon Tunnel",
-        src: "neon_tunnel.html",     // your existing file
+        src: "neon_tunnel.html",
         blurb: "One-tap arcade: flap through glowing gaps in a neon tunnel.",
-        hint: "Tap / Click / Space to flap through the neon tunnel 🚀"
+        hint: "Tap / Click / Space to flap through the neon tunnel 🚀",
+        // Optional custom thumbnail path (PNG/JPG/SVG). If omitted, uses placeholder.
+        // thumb: "img/neon_tunnel_thumb.png"
       },
-      // EXAMPLE placeholder for future additions:
-      // {
-      //   id: "astro_runner",
-      //   title: "Astro Runner",
-      //   src: "astro_runner.html",
-      //   blurb: "Dash, dodge, and collect stardust. Simple, fast, fun.",
-      //   hint: "Arrow keys or WASD to move."
-      // },
+      // Add future games like:
+      // { id:"astro_runner", title:"Astro Runner", src:"astro_runner.html", blurb:"Dash, dodge, collect stardust.", hint:"WASD / Arrow keys.", thumb:"img/astro_runner.png" },
     ];
 
-    // 2) Render game cards
+    // --- Render game cards with thumbnails ---
     const grid = document.getElementById('gameGrid');
     grid.innerHTML = GAMES.map(g => `
-      <button class="game-card text-left p-5 rounded-2xl glass border border-white/10 w-full"
-              data-game="${g.id}">
+      <button class="game-card text-left p-5 rounded-2xl glass border border-white/10 w-full" data-game="${g.id}">
+        <div class="thumb mb-4"><img src="${g.thumb || PLACEHOLDER_THUMB}" alt="${g.title} thumbnail" loading="lazy"></div>
         <div class="text-cyan-200 font-semibold text-lg">${g.title}</div>
         <p class="mt-2 text-slate-300 text-sm">${g.blurb}</p>
         <div class="mt-4 inline-flex items-center gap-2 text-sm text-slate-300">
@@ -140,38 +161,57 @@
       </button>
     `).join('');
 
-    // 3) Helpers
+    // --- Player wiring ---
     const byId = id => GAMES.find(g => g.id === id);
     const player = document.getElementById('player');
     const frame = document.getElementById('gameFrame');
     const titleEl = document.getElementById('gameTitle');
     const hintEl = document.getElementById('gameHint');
     const openNewTab = document.getElementById('openNewTab');
+    const backBtn = document.getElementById('backBtn');
+    const librarySection = document.getElementById('games');
 
-    function playGame(id, pushHash=true) {
+    const LS_KEY = 'tp-last-game';
+
+    function showPlayer(show) {
+      player.classList.toggle('hidden', !show);
+      librarySection.classList.toggle('opacity-40', show);
+    }
+
+    function playGame(id, pushHash = true, remember = true) {
       const g = byId(id);
       if (!g) return;
-
       titleEl.textContent = g.title;
       hintEl.textContent = g.hint || "";
       frame.src = g.src;
       openNewTab.href = g.src;
 
-      player.classList.remove('hidden');
+      if (remember) {
+        try { localStorage.setItem(LS_KEY, id); } catch {}
+      }
+      showPlayer(true);
       if (pushHash) location.hash = `game=${encodeURIComponent(id)}`;
-
-      // Smooth scroll to player on mobile
       setTimeout(() => player.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
     }
 
-    // 4) Click handling on cards
+    // Card click -> play
     grid.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-game]');
       if (!btn) return;
       playGame(btn.dataset.game);
     });
 
-    // 5) Deep-link support: timepass.html#game=neon_tunnel
+    // Back to Library
+    backBtn.addEventListener('click', () => {
+      showPlayer(false);
+      frame.src = 'about:blank';
+      // Keep last-played in localStorage, but clear in-page hash
+      history.replaceState(null, '', location.pathname);
+      // Scroll back to library
+      librarySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // Deep link support: #game=neon_tunnel
     function readHash() {
       const m = location.hash.match(/game=([^&]+)/);
       if (m) {
@@ -180,12 +220,20 @@
       }
     }
     window.addEventListener('hashchange', readHash);
-    readHash(); // on load
 
-    // 6) Default: auto-open Neon Tunnel for first-time visitors (optional)
-    if (!location.hash) {
-      playGame("neon_tunnel", false);
-    }
+    // Startup logic:
+    // 1) If hash present -> open that game
+    // 2) Else if localStorage has last game -> open it
+    // 3) Else open Neon Tunnel by default
+    (function init() {
+      readHash();
+      if (!location.hash) {
+        let last = null;
+        try { last = localStorage.getItem(LS_KEY); } catch {}
+        if (last && byId(last)) playGame(last, false, false);
+        else playGame("neon_tunnel", false, false);
+      }
+    })();
   </script>
 </body>
 </html>
