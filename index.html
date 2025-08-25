@@ -46,31 +46,48 @@
     .linkish:hover::after { transform: scaleX(1); }
 
     /* Micro-animations for CTA & arrows */
-    @keyframes nudge {
-      0%, 100% { transform: translateX(0); }
-      50% { transform: translateX(4px); }
-    }
-    @keyframes pulseSoft {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, .25); }
-      50% { box-shadow: 0 0 24px 6px rgba(34, 211, 238, .16); }
-    }
+    @keyframes nudge { 0%,100%{transform:translateX(0)} 50%{transform:translateX(4px)} }
+    @keyframes pulseSoft { 0%,100%{ box-shadow:0 0 0 0 rgba(34,211,238,.25)} 50%{ box-shadow:0 0 24px 6px rgba(34,211,238,.16)} }
     .cta-animate:hover .cta-arrow { animation: nudge 600ms ease-in-out infinite; }
     .cta-animate { transition: transform .2s ease; }
     .cta-animate:hover { transform: translateY(-1px); animation: pulseSoft 1.2s ease-in-out infinite; }
+
+    /* NOW strip */
+    .dot { width:10px; height:10px; border-radius:9999px; background:#22d3ee; box-shadow:0 0 18px #22d3eeaa; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .dot { animation: blink 1.6s ease-in-out infinite; }
+    .now a:hover { text-decoration: underline; }
   </style>
 </head>
 <body class="antialiased selection:bg-cyan-300/20 selection:text-cyan-100">
   <div class="stars"></div>
   <div class="twinkles"></div>
 
-  <header class="max-w-7xl mx-auto px-6 sm:px-8 py-6 flex items-center justify-between">
-    <a href="index.html" class="flex items-center gap-3 group">
-      <object type="image/svg+xml" data="logo.svg" class="h-20 w-auto"></object>
-    </a>
-    <nav class="hidden sm:flex items-center gap-6 text-sm text-slate-300">
-      <a class="hover:text-white linkish" href="timepass.html">Timepass Games</a>
-      <a class="hover:text-white linkish" href="https://astronomads.substack.com" target="_blank" rel="noopener">Subscribe</a>
-    </nav>
+  <header class="max-w-7xl mx-auto px-6 sm:px-8 py-6">
+    <div class="flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3 group">
+        <!-- logo.svg is in / root; using object so you can swap easily -->
+        <object type="image/svg+xml" data="logo.svg" class="h-16 w-auto"></object>
+      </a>
+      <nav class="hidden sm:flex items-center gap-6 text-sm text-slate-300">
+        <a class="hover:text-white linkish" href="timepass.html">Timepass Games</a>
+        <a class="hover:text-white linkish" href="https://astronomads.substack.com" target="_blank" rel="noopener">Subscribe</a>
+      </nav>
+    </div>
+
+    <!-- NOW STRIP -->
+    <div class="now mt-5 rounded-xl glass border border-white/10 p-3 text-sm text-slate-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="dot"></span>
+        <span class="font-semibold tracking-wide">Now</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <!-- These will be populated by the script below -->
+        <a id="now-substack" class="hover:text-white linkish" target="_blank" rel="noopener"></a>
+        <span class="opacity-50 hidden sm:block">•</span>
+        <a id="now-thread" class="hover:text-white linkish" target="_blank" rel="noopener"></a>
+      </div>
+    </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-6 sm:px-8">
@@ -170,6 +187,26 @@
   </footer>
 
   <script>
+    // === NOW STRIP CONFIG ===
+    // Update these values when you publish something new.
+    const NOW = {
+      substack: {
+        title: "Latest: How to ship a tiny AI tool in 48 hours",
+        url: "https://astronomads.substack.com" // replace with the specific post url
+      },
+      thread: {
+        title: "Thread: 7 solo SaaS loops (that actually compound)",
+        url: "https://x.com/_astronomad" // replace with the specific tweet url
+      }
+    };
+
+    // Apply to DOM
+    const s = document.getElementById('now-substack');
+    const t = document.getElementById('now-thread');
+    if (s) { s.textContent = NOW.substack.title; s.href = NOW.substack.url; }
+    if (t) { t.textContent = NOW.thread.title; t.href = NOW.thread.url; }
+
+    // Footer year
     document.getElementById('y').textContent = new Date().getFullYear();
   </script>
 </body>
